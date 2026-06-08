@@ -1,0 +1,178 @@
+﻿@page "/"
+@using MundaBattleReport.Models
+@using MundaBattleReport.Services
+@inject GangImportService GangImportService
+@inject ISnackbar Snackbar
+
+<PageTitle>Munda Battle Report Generator</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+    <MudText Typo="Typo.h3" Class="mb-4">Necromunda Battle Report Generator</MudText>
+    <MudText Typo="Typo.body1" Class="mb-6">Import your gang from Munda Manager and generate cinematic battle narratives.</MudText>
+
+    @if (ImportedGang == null)
+    {
+        <MudCard Class="mb-6">
+            <MudCardContent>
+                <MudText Typo="Typo.h5" Class="mb-4">Step 1: Import Your Gang</MudText>
+
+                <MudTextField
+                    @bind-Value="GangInput"
+                    Label="Munda Manager Share Link or JSON Export"
+                    Placeholder="Paste a Munda Manager share link or JSON data"
+                    Variant="Variant.Outlined"
+                    FullWidth="true"
+                    Lines="4"
+                    Class="mb-4" />
+
+                <MudText Typo="Typo.caption" Class="mb-4">
+                    📋 You can paste either:
+                    <ul>
+                        <li>A Munda Manager share link (e.g., https://mundamanager.com/share/...)</li>
+                        <li>A JSON export from Munda Manager</li>
+                    </ul>
+                </MudText>
+
+                <MudButton
+                    Variant="Variant.Filled"
+                    Color="Color.Primary"
+                    Size="Size.Large"
+                    FullWidth="true"
+                    OnClick="ImportGang"
+                    Disabled="IsLoading || string.IsNullOrWhiteSpace(GangInput)">
+                    @if (IsLoading)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2">Fetching gang data...</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Import Gang</MudText>
+                    }
+                </MudButton>
+            </MudCardContent>
+        </MudCard>
+    }
+    else
+    {
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h5" Class="mb-4">Step 2: Verify Gang Data</MudText>
+
+                <MudAlert Severity="Severity.Success" Class="mb-4">
+                    Successfully imported <strong>@ImportedGang.Name</strong> (@ImportedGang.House)
+                </MudAlert>
+
+                <MudText Typo="Typo.subtitle2" Class="mb-3">Gang Roster</MudText>
+
+                <MudTable Items="ImportedGang.Fighters" Hover="true" Dense="true" Class="mb-4">
+                    <HeaderContent>
+                        <MudTh>Fighter Name</MudTh>
+                        <MudTh>Type</MudTh>
+                        <MudTh>WS/BS</MudTh>
+                        <MudTh>Equipment</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Name">@context.FighterName</MudTd>
+                        <MudTd DataLabel="Type">@context.FighterType</MudTd>
+                        <MudTd DataLabel="WS/BS">@context.WeaponSkill/@context.BallisticSkill</MudTd>
+                        <MudTd DataLabel="Equipment">
+                            @if (context.Weapons.Any())
+                            {
+                                @string.Join(", ", context.Weapons.Select(w => w.Name))
+                            }
+                            else
+                            {
+                                <em>No weapons</em>
+                            }
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Gang Details</MudText>
+                <MudGrid Class="mb-4">
+                    <MudItem xs="6">
+                        <MudTextField
+                            @bind-Value="ImportedGang.Name"
+                            Label="Gang Name"
+                            Variant="Variant.Outlined"
+                            FullWidth="true" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTextField
+                            @bind-Value="ImportedGang.House"
+                            Label="House"
+                            Variant="Variant.Outlined"
+                            FullWidth="true" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudText Typo="Typo.caption" Class="mb-4">
+                    ✓ Gang data is ready. Proceed to battle logging next.
+                </MudText>
+
+                <MudStack Row="true" Spacing="2">
+                    <MudButton
+                        Variant="Variant.Outlined"
+                        Color="Color.Default"
+                        OnClick="ResetImport">
+                        Import Different Gang
+                    </MudButton>
+                    <MudButton
+                        Variant="Variant.Filled"
+                        Color="Color.Primary"
+                        OnClick="ProceedToNextStep">
+                        Continue to Battle Setup
+                    </MudButton>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    }
+</MudContainer>
+
+@code {
+    private string GangInput = "";
+    private Gang? ImportedGang = null;
+    private bool IsLoading = false;
+
+    private async Task ImportGang()
+    {
+        if (string.IsNullOrWhiteSpace(GangInput))
+            return;
+
+        IsLoading = true;
+        try
+        {
+            var (success, gang, errorMessage) = await GangImportService.ImportGangAsync(GangInput);
+
+            if (success && gang != null)
+            {
+                ImportedGang = gang;
+                Snackbar.Add("Gang imported successfully!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(errorMessage, Severity.Error);
+            }
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void ResetImport()
+    {
+        ImportedGang = null;
+        GangInput = "";
+    }
+
+    private void ProceedToNextStep()
+    {
+        if (ImportedGang != null)
+        {
+            // TODO: Store gang in session state and navigate to BattleSetup.razor
+            Snackbar.Add("Feature coming soon: Battle setup", Severity.Info);
+        }
+    }
+}
