@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MundaBattleReport.Models;
+using PuppeteerSharp;
 
 namespace MundaBattleReport.Services;
 
@@ -70,22 +71,14 @@ public class GangImportService
     {
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            var response = await _httpClient.GetAsync(uri, HttpCompletionOption.ResponseContentRead, cts.Token);
+            // Use Puppeteer to render the page and extract data
+            _logger.LogInformation("Fetching Munda Manager gang page using Puppeteer: {Uri}", uri);
+            var fighters = await FetchGangDataWithPuppeteerAsync(uri);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Munda Manager link returned status {StatusCode}", response.StatusCode);
-                return (false, null, $"Link returned error {response.StatusCode}. Link may be invalid or expired.");
-            }
-
-            var content = await response.Content.ReadAsStringAsync(cts.Token);
-
-            // Try to extract JSON from response
-            var fighters = ExtractFightersFromHtml(content);
             if (fighters == null || fighters.Count == 0)
             {
-                return (false, null, "No fighter data found in Munda Manager page. Link may be invalid.");
+                _logger.LogWarning("No fighter data extracted from Munda Manager page");
+                return (false, null, "Could not read gang data from the Munda Manager link. Please verify the link is correct and publicly shared.");
             }
 
             var house = ExtractHouseFromFighters(fighters);
@@ -101,18 +94,221 @@ public class GangImportService
                 ImportedAt = DateTime.UtcNow
             };
 
-            _logger.LogInformation("Successfully imported gang from Munda Manager: {GangName} ({House})", gang.Name, gang.House);
+            _logger.LogInformation("Successfully imported gang from Munda Manager: {GangName} ({House}) with {FighterCount} fighters", gang.Name, gang.House, fighters.Count);
             return (true, gang, "");
         }
         catch (TaskCanceledException)
         {
             _logger.LogWarning("Munda Manager request timed out");
-            return (false, null, "Network timeout. Please check the link and try again.");
+            return (false, null, "Network timeout fetching Munda Manager page. Please check your connection and try again.");
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
-            _logger.LogWarning("Network error fetching Munda Manager data: {Error}", ex.Message);
-            return (false, null, $"Network error: {ex.Message}");
+            _logger.LogWarning("Error fetching gang data from Munda Manager: {Error}", ex.Message);
+            return (false, null, $"Error reading Munda Manager page: {ex.Message}");
+        }
+    }
+
+    private static IBrowser? _browser;
+    private static readonly SemaphoreSlim _browserLock = new SemaphoreSlim(1, 1);
+
+    private async Task<List<MundaFighter>?> FetchGangDataWithPuppeteerAsync(Uri uri)
+    {
+        try
+        {
+            // Ensure browser is initialized (one-time cost)
+            await _browserLock.WaitAsync();
+            try
+            {
+                if (_browser == null)
+                {
+                    _logger.LogInformation("Initializing Puppeteer browser...");
+                    var browserFetcher = new BrowserFetcher();
+                    await browserFetcher.DownloadAsync();
+
+                    _browser = await Puppeteer.LaunchAsync(new LaunchOptions
+                    {
+                        Headless = true,
+                        Args = new[]
+                        {
+                            "--no-sandbox",
+                            "--disable-setuid-sandbox",
+                            "--disable-dev-shm-usage"
+                        }
+                    });
+                }
+            }
+            finally
+            {
+                _browserLock.Release();
+            }
+
+            await using var page = await _browser.NewPageAsync();
+            page.DefaultTimeout = 10000;
+            page.DefaultNavigationTimeout = 10000;
+
+            _logger.LogInformation("Navigating to Munda Manager gang page: {Uri}", uri);
+
+            try
+            {
+                await page.GoToAsync(uri.ToString(), WaitUntilNavigation.Networkidle2);
+            }
+            catch (WaitTaskTimeoutException)
+            {
+                _logger.LogWarning("Navigation timeout, continuing with page content");
+                // Page may have loaded enough content
+            }
+
+            // Wait for fighter content to appear
+            try
+            {
+                await page.WaitForFunctionAsync(
+                    "() => document.body.innerText.includes('Fighter') || document.body.innerText.includes('WS')",
+                    new WaitForFunctionOptions { Timeout = 5000 }
+                );
+            }
+            catch
+            {
+                _logger.LogWarning("Timeout waiting for fighter content");
+            }
+
+            // Extract fighter data using Munda Manager's specific DOM structure
+            var fightersJson = await page.EvaluateFunctionAsync<string?>(@"
+                () => {
+                    const fighters = [];
+
+                    // Munda Manager wraps each fighter in an <a> tag with href=""/fighter/{guid}""
+                    const fighterLinks = document.querySelectorAll('a[href*=""/fighter/""]');
+
+                    fighterLinks.forEach(link => {
+                        // Find the fighter card div within this link
+                        const card = link.querySelector('div[class*=""fighter-card-bg""]');
+                        if (!card) return;
+
+                        // Extract fighter name from fancy-print-keep-color-heading
+                        const nameEl = card.querySelector('.fancy-print-keep-color-heading');
+                        const fighterName = nameEl?.textContent?.trim() || '';
+
+                        // Extract fighter type from fancy-print-keep-color-subtitle
+                        const typeEl = card.querySelector('.fancy-print-keep-color-subtitle');
+                        const fighterTypeRaw = typeEl?.textContent?.trim() || 'Ganger';
+
+                        // Parse type (e.g., ""Road Captain (Leader)"" -> type=Leader, class=Road Captain)
+                        const typeMatch = fighterTypeRaw.match(/(.+?)\\s*\\((.+?)\\)/);
+                        const fighterClass = typeMatch ? typeMatch[1].trim() : '';
+                        const fighterType = typeMatch ? typeMatch[2].trim() : fighterTypeRaw;
+
+                        // Extract credits from the credits badge
+                        let credits = 0;
+                        const creditSpans = Array.from(card.querySelectorAll('span')).find(el => el.textContent?.includes('Credits'));
+                        if (creditSpans) {
+                            const creditValue = creditSpans.previousElementSibling?.textContent?.trim() || '';
+                            credits = parseInt(creditValue) || 0;
+                        }
+
+                        // Extract stats from the first table (stat block)
+                        const statsTable = card.querySelector('table:not(.table-weapons)');
+                        const stats = extractStatsFromTable(statsTable);
+
+                        // Extract weapons from the weapons table
+                        const weaponsTable = card.querySelector('table.table-weapons');
+                        const weapons = extractWeaponsFromTable(weaponsTable);
+
+                        // Extract wargear and skills
+                        const wargearText = card.innerText.match(/Wargear\\s+(.+?)(?=Skills|$)/)?.[1]?.trim() || '';
+                        const skillsText = card.innerText.match(/Skills\\s+(.+?)(?=Special|Wargear|$)/)?.[1]?.trim() || '';
+
+                        if (fighterName) {
+                            fighters.push({
+                                id: link.getAttribute('href')?.replace('/fighter/', '') || '',
+                                fighterName: fighterName,
+                                fighterType: fighterType,
+                                fighterClass: fighterClass,
+                                credits: credits,
+                                movement: stats.m || 0,
+                                weaponSkill: stats.ws || 0,
+                                ballisticSkill: stats.bs || 0,
+                                strength: stats.s || 0,
+                                toughness: stats.t || 0,
+                                wounds: stats.w || 0,
+                                initiative: stats.i || 0,
+                                attacks: stats.a || 0,
+                                leadership: stats.ld || 0,
+                                cool: stats.cl || 0,
+                                willpower: stats.wil || 0,
+                                intelligence: stats.int || 0,
+                                weapons: weapons,
+                                wargear: wargearText.split(',').map(w => ({ name: w.trim() })).filter(w => w.name),
+                                effects: { active: skillsText.split(',').map(s => s.trim()).filter(s => s) }
+                            });
+                        }
+                    });
+
+                    return fighters.length > 0 ? JSON.stringify(fighters) : null;
+
+                    function extractStatsFromTable(table) {
+                        if (!table) return {};
+                        const stats = {};
+                        const headerCells = table.querySelectorAll('thead th');
+                        const valueCells = table.querySelectorAll('tbody td');
+
+                        headerCells.forEach((cell, idx) => {
+                            const label = cell.textContent?.trim().toLowerCase() || '';
+                            const value = valueCells[idx]?.textContent?.trim() || '';
+                            if (label === 'm') stats.m = parseInt(value) || 0;
+                            if (label === 'ws') stats.ws = parseInt(value) || 0;
+                            if (label === 'bs') stats.bs = parseInt(value) || 0;
+                            if (label === 's') stats.s = parseInt(value) || 0;
+                            if (label === 't') stats.t = parseInt(value) || 0;
+                            if (label === 'w') stats.w = parseInt(value) || 0;
+                            if (label === 'i') stats.i = parseInt(value) || 0;
+                            if (label === 'a') stats.a = parseInt(value) || 0;
+                            if (label === 'ld') stats.ld = parseInt(value) || 0;
+                            if (label === 'cl') stats.cl = parseInt(value) || 0;
+                            if (label === 'wil') stats.wil = parseInt(value) || 0;
+                            if (label === 'int') stats.int = parseInt(value) || 0;
+                        });
+
+                        return stats;
+                    }
+
+                    function extractWeaponsFromTable(table) {
+                        if (!table) return [];
+                        const weapons = [];
+                        const rows = table.querySelectorAll('tbody tr');
+
+                        rows.forEach(row => {
+                            const nameCell = row.querySelector('td:first-child');
+                            if (nameCell) {
+                                weapons.push({
+                                    name: nameCell.textContent?.trim() || 'Unknown Weapon',
+                                    type: 'ranged'
+                                });
+                            }
+                        });
+
+                        return weapons;
+                    }
+                }
+            ");
+
+            if (!string.IsNullOrEmpty(fightersJson))
+            {
+                var fighters = JsonSerializer.Deserialize<List<MundaFighter>>(fightersJson);
+                if (fighters?.Count > 0)
+                {
+                    _logger.LogInformation("Extracted {FighterCount} fighters from page", fighters.Count);
+                    return fighters;
+                }
+            }
+
+            _logger.LogWarning("No fighters extracted from Munda Manager page");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Puppeteer extraction failed: {Error}", ex.Message);
+            return null;
         }
     }
 
@@ -120,55 +316,38 @@ public class GangImportService
     {
         try
         {
-            // Look for JSON embedded in HTML (common pattern for web apps)
-            var jsonStart = html.IndexOf("\"fighters\":", StringComparison.OrdinalIgnoreCase);
-            if (jsonStart == -1)
-                return null;
+            // Strategy 1: Try __NEXT_DATA__ (Next.js apps like Munda Manager)
+            var nextDataMatch = System.Text.RegularExpressions.Regex.Match(
+                html,
+                @"<script\s+id=""__NEXT_DATA__""[^>]*>(.+?)</script>",
+                System.Text.RegularExpressions.RegexOptions.Singleline);
 
-            var bracketCount = 0;
-            var inString = false;
-            var escaped = false;
-            var startPos = -1;
-
-            for (var i = jsonStart + 11; i < html.Length; i++)
+            if (nextDataMatch.Success)
             {
-                var ch = html[i];
+                var nextDataJson = nextDataMatch.Groups[1].Value;
+                var nextData = JsonSerializer.Deserialize<System.Text.Json.JsonElement>(nextDataJson);
 
-                if (escaped)
+                // Try to find fighters in props
+                if (nextData.TryGetProperty("props", out var props) &&
+                    props.TryGetProperty("pageProps", out var pageProps) &&
+                    pageProps.TryGetProperty("fighters", out var fighters))
                 {
-                    escaped = false;
-                    continue;
+                    return JsonSerializer.Deserialize<List<MundaFighter>>(fighters.GetRawText());
                 }
 
-                if (ch == '\\')
+                // Alternative: search for fighters anywhere in the object
+                var fightersJson = FindFightersInJson(nextData);
+                if (fightersJson != null)
                 {
-                    escaped = true;
-                    continue;
+                    return JsonSerializer.Deserialize<List<MundaFighter>>(fightersJson);
                 }
+            }
 
-                if (ch == '"' && !escaped)
-                {
-                    inString = !inString;
-                    continue;
-                }
-
-                if (!inString)
-                {
-                    if (ch == '[')
-                    {
-                        if (startPos == -1) startPos = i;
-                        bracketCount++;
-                    }
-                    else if (ch == ']')
-                    {
-                        bracketCount--;
-                        if (bracketCount == 0 && startPos != -1)
-                        {
-                            var jsonStr = html.Substring(startPos, i - startPos + 1);
-                            return JsonSerializer.Deserialize<List<MundaFighter>>(jsonStr);
-                        }
-                    }
-                }
+            // Strategy 2: Look for direct "fighters" JSON in HTML
+            var jsonStart = html.IndexOf("\"fighters\":", StringComparison.OrdinalIgnoreCase);
+            if (jsonStart != -1)
+            {
+                return ExtractFightersArray(html, jsonStart + 11);
             }
 
             return null;
@@ -178,6 +357,84 @@ public class GangImportService
             _logger.LogWarning("Error extracting fighters from HTML: {Error}", ex.Message);
             return null;
         }
+    }
+
+    private List<MundaFighter>? ExtractFightersArray(string html, int startIdx)
+    {
+        var bracketCount = 0;
+        var inString = false;
+        var escaped = false;
+        var startPos = -1;
+
+        for (var i = startIdx; i < html.Length; i++)
+        {
+            var ch = html[i];
+
+            if (escaped)
+            {
+                escaped = false;
+                continue;
+            }
+
+            if (ch == '\\')
+            {
+                escaped = true;
+                continue;
+            }
+
+            if (ch == '"' && !escaped)
+            {
+                inString = !inString;
+                continue;
+            }
+
+            if (!inString)
+            {
+                if (ch == '[')
+                {
+                    if (startPos == -1) startPos = i;
+                    bracketCount++;
+                }
+                else if (ch == ']')
+                {
+                    bracketCount--;
+                    if (bracketCount == 0 && startPos != -1)
+                    {
+                        var jsonStr = html.Substring(startPos, i - startPos + 1);
+                        return JsonSerializer.Deserialize<List<MundaFighter>>(jsonStr);
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private string? FindFightersInJson(System.Text.Json.JsonElement element, int depth = 0)
+    {
+        if (depth > 10) return null; // Prevent infinite recursion
+
+        if (element.ValueKind == System.Text.Json.JsonValueKind.Array)
+        {
+            try
+            {
+                var fighters = JsonSerializer.Deserialize<List<MundaFighter>>(element.GetRawText());
+                if (fighters?.Count > 0)
+                    return element.GetRawText();
+            }
+            catch { }
+        }
+
+        if (element.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            foreach (var prop in element.EnumerateObject())
+            {
+                var result = FindFightersInJson(prop.Value, depth + 1);
+                if (result != null) return result;
+            }
+        }
+
+        return null;
     }
 
     private string ExtractHouseFromFighters(List<MundaFighter> fighters)

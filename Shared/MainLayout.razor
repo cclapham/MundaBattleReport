@@ -1,19 +1,17 @@
 ﻿@inherits LayoutComponentBase
 
-<PageTitle>MundaBattleReport</PageTitle>
+<PageTitle>Munda Battle Report Generator</PageTitle>
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<MudLayout>
+    <MudAppBar Elevation="2" Class="munda-appbar">
+        <MudText Typo="Typo.h5" Class="munda-title">
+            ⚔️ Munda Battle Report
+        </MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Home" Color="Color.Inherit" Href="/" />
+    </MudAppBar>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+    <MudMainContent Class="munda-main-content">
+        @Body
+    </MudMainContent>
+</MudLayout>

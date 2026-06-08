@@ -1,5 +1,7 @@
+using MudBlazor;
 using MudBlazor.Services;
 using MundaBattleReport.Services;
+using MundaBattleReport.Themes;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,7 +9,13 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddMudBlazorDialog();
 builder.Services.AddMudBlazorSnackbar();
-builder.Services.AddMudServices();
+builder.Services.AddMudServices(config =>
+{
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
+    config.SnackbarConfiguration.HideTransitionDuration = 500;
+    config.SnackbarConfiguration.ShowTransitionDuration = 500;
+    config.SnackbarConfiguration.VisibleStateDuration = 5000;
+});
 
 builder.Services.AddHttpClient<GangImportService>();
 
