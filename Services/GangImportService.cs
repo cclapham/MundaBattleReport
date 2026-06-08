@@ -40,7 +40,8 @@ public class GangImportService
     {
         try
         {
-            var fighters = JsonSerializer.Deserialize<List<MundaFighter>>(json);
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var fighters = JsonSerializer.Deserialize<List<MundaFighter>>(json, options);
             if (fighters == null || fighters.Count == 0)
                 return (false, null, "No fighters found in JSON");
 
@@ -294,7 +295,8 @@ public class GangImportService
 
             if (!string.IsNullOrEmpty(fightersJson))
             {
-                var fighters = JsonSerializer.Deserialize<List<MundaFighter>>(fightersJson);
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var fighters = JsonSerializer.Deserialize<List<MundaFighter>>(fightersJson, options);
                 if (fighters?.Count > 0)
                 {
                     _logger.LogInformation("Extracted {FighterCount} fighters from page", fighters.Count);
@@ -332,14 +334,16 @@ public class GangImportService
                     props.TryGetProperty("pageProps", out var pageProps) &&
                     pageProps.TryGetProperty("fighters", out var fighters))
                 {
-                    return JsonSerializer.Deserialize<List<MundaFighter>>(fighters.GetRawText());
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    return JsonSerializer.Deserialize<List<MundaFighter>>(fighters.GetRawText(), options);
                 }
 
                 // Alternative: search for fighters anywhere in the object
                 var fightersJson = FindFightersInJson(nextData);
                 if (fightersJson != null)
                 {
-                    return JsonSerializer.Deserialize<List<MundaFighter>>(fightersJson);
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    return JsonSerializer.Deserialize<List<MundaFighter>>(fightersJson, options);
                 }
             }
 
@@ -401,7 +405,8 @@ public class GangImportService
                     if (bracketCount == 0 && startPos != -1)
                     {
                         var jsonStr = html.Substring(startPos, i - startPos + 1);
-                        return JsonSerializer.Deserialize<List<MundaFighter>>(jsonStr);
+                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                        return JsonSerializer.Deserialize<List<MundaFighter>>(jsonStr, options);
                     }
                 }
             }
@@ -418,7 +423,8 @@ public class GangImportService
         {
             try
             {
-                var fighters = JsonSerializer.Deserialize<List<MundaFighter>>(element.GetRawText());
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var fighters = JsonSerializer.Deserialize<List<MundaFighter>>(element.GetRawText(), options);
                 if (fighters?.Count > 0)
                     return element.GetRawText();
             }

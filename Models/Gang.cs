@@ -10,6 +10,19 @@ public class Gang
     public DateTime ImportedAt { get; set; } = DateTime.UtcNow;
 
     [System.ComponentModel.DataAnnotations.Schema.NotMapped]
-    public List<MundaFighter> Fighters =>
-        System.Text.Json.JsonSerializer.Deserialize<List<MundaFighter>>(RawData) ?? [];
+    public List<MundaFighter> Fighters
+    {
+        get
+        {
+            try
+            {
+                var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                return System.Text.Json.JsonSerializer.Deserialize<List<MundaFighter>>(RawData, options) ?? [];
+            }
+            catch
+            {
+                return [];
+            }
+        }
+    }
 }
