@@ -1,0 +1,97 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Rider
+.idea/
+*.sln.iml
+*.sln.DotSettings.user
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Local user-specific files
+appsettings.Local.json
+local.settings.json
+
+# Rider cache
+.idea_modules/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+nuget.config.local
+
+# Publish output
+PublishProfiles/
+publish/
+PublishScripts/
+
+# Rider build cache
+.idea/runConfigurations/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Local environment/secrets
+.env
+.env.local
+local.settings.json
+
+# Puppeteer Chrome downloads
+bin/Debug/net10.0/Chrome/
+bin/Release/net10.0/Chrome/
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# Editor backup files
+*~
+*.swp
+*.swo
+*#
+
+# Temp files
+*.tmp
+*.temp
+*.log
+
+# IDE specific
+.vscode/
+.vs/
+.idea/
+
+# Build output
+bin/
+obj/
+publish/
