@@ -157,24 +157,8 @@ public class GangImportService
             page.DefaultTimeout = 10000;
             page.DefaultNavigationTimeout = 10000;
 
-            // Log in if credentials provided
-            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
-            {
-                _logger.LogInformation("Logging into Munda Manager with credentials...");
-                try
-                {
-                    await LoginToMundaManagerAsync(page, username, password);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning("Login failed: {Error}", ex.Message);
-                    throw;
-                }
-            }
-            else
-            {
-                _logger.LogWarning("No credentials provided for Munda Manager authentication");
-            }
+            // Try to access the page directly first (share links may be publicly accessible)
+            // Skip login - Munda Manager has CAPTCHA which blocks automation
 
             _logger.LogInformation("Navigating to Munda Manager gang page: {Uri}", uri);
 
@@ -514,15 +498,25 @@ public class GangImportService
                 await passwordInput.TypeAsync(password);
             }
 
-            // Click login button
-            var loginButton = await page.QuerySelectorAsync("button[type='submit'], button:has-text('Login'), button:has-text('Sign In')");
-            if (loginButton != null)
+            // Submit the form using requestSubmit (React form requirement)
+            var form = await page.QuerySelectorAsync("form");
+            if (form != null)
             {
-                await loginButton.ClickAsync();
-                await page.WaitForNavigationAsync(new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } });
+                _logger.LogInformation("Submitting login form...");
+                await form.EvaluateFunctionAsync("form => form.requestSubmit()");
+
+                // Wait for navigation
+                try
+                {
+                    await page.WaitForNavigationAsync(new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Networkidle2 }, Timeout = 10000 });
+                }
+                catch (WaitTaskTimeoutException)
+                {
+                    _logger.LogWarning("Form submission may be blocked by CAPTCHA");
+                }
             }
 
-            _logger.LogInformation("Successfully logged into Munda Manager");
+            _logger.LogInformation("Login attempt completed");
         }
         catch (Exception ex)
         {
