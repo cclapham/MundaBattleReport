@@ -25,31 +25,44 @@
                     Lines="4"
                     Class="mb-4" />
 
+                <MudAlert Severity="Severity.Info" Class="mb-4">
+                    <strong>Authentication Required:</strong> Make sure you're logged into Munda Manager in your browser before pasting a link. The share link needs to be from an authenticated session.
+                </MudAlert>
+
                 <MudText Typo="Typo.caption" Class="mb-4">
                     📋 You can paste either:
                     <ul>
-                        <li>A Munda Manager share link (e.g., https://mundamanager.com/share/...)</li>
-                        <li>A JSON export from Munda Manager</li>
+                        <li>A Munda Manager share link from your authenticated session</li>
+                        <li>A JSON export from Munda Manager (works offline)</li>
                     </ul>
                 </MudText>
 
-                <MudButton
-                    Variant="Variant.Filled"
-                    Color="Color.Primary"
-                    Size="Size.Large"
-                    FullWidth="true"
-                    OnClick="ImportGang"
-                    Disabled="IsLoading || string.IsNullOrWhiteSpace(GangInput)">
-                    @if (IsLoading)
-                    {
-                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                        <MudText Class="ms-2">Fetching gang data...</MudText>
-                    }
-                    else
-                    {
-                        <MudText>Import Gang</MudText>
-                    }
-                </MudButton>
+                <MudStack Row="true" Spacing="2" Class="mb-4">
+                    <MudButton
+                        Variant="Variant.Filled"
+                        Color="Color.Primary"
+                        Size="Size.Large"
+                        FullWidth="true"
+                        OnClick="ImportGang"
+                        Disabled="IsLoading || string.IsNullOrWhiteSpace(GangInput)">
+                        @if (IsLoading)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ms-2">Fetching gang data...</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Import Gang</MudText>
+                        }
+                    </MudButton>
+                    <MudButton
+                        Variant="Variant.Outlined"
+                        Color="Color.Default"
+                        Size="Size.Large"
+                        OnClick="LoadSampleGang">
+                        Load Sample Data
+                    </MudButton>
+                </MudStack>
             </MudCardContent>
         </MudCard>
     }
@@ -173,6 +186,20 @@
         {
             // TODO: Store gang in session state and navigate to BattleSetup.razor
             Snackbar.Add("Feature coming soon: Battle setup", Severity.Info);
+        }
+    }
+
+    private void LoadSampleGang()
+    {
+        var (success, gang, errorMessage) = GangImportService.GenerateSampleGang();
+        if (success && gang != null)
+        {
+            ImportedGang = gang;
+            Snackbar.Add("Sample gang loaded for testing", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Failed to load sample gang", Severity.Error);
         }
     }
 }

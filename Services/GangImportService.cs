@@ -106,7 +106,10 @@ public class GangImportService
         catch (Exception ex)
         {
             _logger.LogWarning("Error fetching gang data from Munda Manager: {Error}", ex.Message);
-            return (false, null, $"Error reading Munda Manager page: {ex.Message}");
+            var errorMsg = ex.Message.Contains("403") || ex.Message.Contains("401")
+                ? "Access denied - are you logged into Munda Manager? Make sure the share link is from an authenticated session."
+                : $"Error reading Munda Manager page: {ex.Message}";
+            return (false, null, errorMsg);
         }
     }
 
@@ -460,5 +463,53 @@ public class GangImportService
             return $"{leader.FighterName}'s Gang";
 
         return "Imported Gang";
+    }
+
+    /// <summary>
+    /// Generates sample gang data for testing. Use this while PoC'ing authentication with Munda Manager.
+    /// </summary>
+    public (bool Success, Gang? Gang, string ErrorMessage) GenerateSampleGang()
+    {
+        var fighters = new List<MundaFighter>
+        {
+            new MundaFighter
+            {
+                Id = "sample-1",
+                FighterName = "Boss Hank",
+                FighterType = "Leader",
+                FighterClass = "Gang Leader",
+                Credits = 150,
+                Movement = 4, WeaponSkill = 4, BallisticSkill = 3, Strength = 4, Toughness = 3,
+                Wounds = 1, Initiative = 3, Attacks = 2, Leadership = 9, Cool = 7, Willpower = 6, Intelligence = 5,
+                Weapons = new() { new() { Name = "Bolt Pistol", Type = "ranged" }, new() { Name = "Sword", Type = "melee" } },
+                Wargear = new(),
+                Effects = new() { Active = new() }
+            },
+            new MundaFighter
+            {
+                Id = "sample-2",
+                FighterName = "Scarface",
+                FighterType = "Ganger",
+                FighterClass = "Juve",
+                Credits = 75,
+                Movement = 4, WeaponSkill = 3, BallisticSkill = 3, Strength = 3, Toughness = 3,
+                Wounds = 1, Initiative = 3, Attacks = 1, Leadership = 6, Cool = 5, Willpower = 4, Intelligence = 4,
+                Weapons = new() { new() { Name = "Lasgun", Type = "ranged" } },
+                Wargear = new(),
+                Effects = new() { Active = new() }
+            }
+        };
+
+        var rawJson = System.Text.Json.JsonSerializer.Serialize(fighters);
+        var gang = new Gang
+        {
+            Name = "Sample Gang",
+            House = "Goliath",
+            RawData = rawJson,
+            MmSource = "Sample Data (for testing)",
+            ImportedAt = DateTime.UtcNow
+        };
+
+        return (true, gang, "");
     }
 }
