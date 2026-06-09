@@ -3,6 +3,7 @@
 @using MundaBattleReport.Services
 @inject GangImportService GangImportService
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 
 <PageTitle>Munda Battle Report Generator</PageTitle>
 
@@ -25,17 +26,28 @@
                     Lines="4"
                     Class="mb-4" />
 
-                <MudAlert Severity="Severity.Info" Class="mb-4">
-                    <strong>Authentication Required:</strong> Make sure you're logged into Munda Manager in your browser before pasting a link. The share link needs to be from an authenticated session.
-                </MudAlert>
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Option 1: Login to Munda Manager</MudText>
+                <MudButton
+                    Variant="Variant.Filled"
+                    Color="Color.Primary"
+                    Size="Size.Large"
+                    FullWidth="true"
+                    Class="mb-4"
+                    OnClick="OpenMundaLoginModal">
+                    Login & Import from Munda Manager
+                </MudButton>
 
-                <MudText Typo="Typo.caption" Class="mb-4">
-                    📋 You can paste either:
-                    <ul>
-                        <li>A Munda Manager share link from your authenticated session</li>
-                        <li>A JSON export from Munda Manager (works offline)</li>
-                    </ul>
-                </MudText>
+                <MudDivider Class="my-4" />
+
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Option 2: Paste Gang Data Manually</MudText>
+                <MudTextField
+                    @bind-Value="GangInput"
+                    Label="JSON Data"
+                    Placeholder="Paste JSON gang data"
+                    Variant="Variant.Outlined"
+                    FullWidth="true"
+                    Lines="3"
+                    Class="mb-4" />
 
                 <MudStack Row="true" Spacing="2" Class="mb-4">
                     <MudButton
@@ -48,7 +60,7 @@
                         @if (IsLoading)
                         {
                             <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                            <MudText Class="ms-2">Fetching gang data...</MudText>
+                            <MudText Class="ms-2">Importing...</MudText>
                         }
                         else
                         {
@@ -143,10 +155,49 @@
     }
 </MudContainer>
 
+<MudDialog @bind-IsVisible="ShowMundaModal" MaxWidth="MaxWidth.Large" FullWidth="true">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Login to Munda Manager & Extract Gang Data</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudAlert Severity="Severity.Info" Class="mb-4">
+            <strong>Instructions:</strong>
+            <ol>
+                <li>Log in to Munda Manager (if needed)</li>
+                <li>Navigate to your gang page</li>
+                <li>Click the "Extract Gang Data" button below</li>
+            </ol>
+        </MudAlert>
+
+        <div style="border: 1px solid #ccc; border-radius: 4px; overflow: hidden; margin-bottom: 16px;">
+            <iframe
+                id="munda-iframe"
+                src="https://www.mundamanager.com/"
+                style="width: 100%; height: 500px; border: none;">
+            </iframe>
+        </div>
+
+        @if (MundaExtractionError != null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">
+                @MundaExtractionError
+            </MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseMundaModal">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ExtractGangFromMunda">
+            Extract Gang Data
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 @code {
     private string GangInput = "";
     private Gang? ImportedGang = null;
     private bool IsLoading = false;
+    private bool ShowMundaModal = false;
+    private string? MundaExtractionError = null;
 
     private async Task ImportGang()
     {
@@ -200,6 +251,57 @@
         else
         {
             Snackbar.Add("Failed to load sample gang", Severity.Error);
+        }
+    }
+
+    private void OpenMundaLoginModal()
+    {
+        ShowMundaModal = true;
+        MundaExtractionError = null;
+    }
+
+    private void CloseMundaModal()
+    {
+        ShowMundaModal = false;
+    }
+
+    private async Task ExtractGangFromMunda()
+    {
+        try
+        {
+            MundaExtractionError = null;
+            IsLoading = true;
+
+            var extractedJson = await JS.InvokeAsync<string>("extractGangDataFromIframe");
+
+            if (string.IsNullOrEmpty(extractedJson))
+            {
+                MundaExtractionError = "No gang data found. Make sure you're viewing a gang page in Munda Manager.";
+                return;
+            }
+
+            // Process the extracted JSON
+            GangInput = extractedJson;
+            var (success, gang, errorMessage) = await GangImportService.ImportGangAsync(extractedJson);
+
+            if (success && gang != null)
+            {
+                ImportedGang = gang;
+                ShowMundaModal = false;
+                Snackbar.Add("Gang imported successfully from Munda Manager!", Severity.Success);
+            }
+            else
+            {
+                MundaExtractionError = errorMessage;
+            }
+        }
+        catch (Exception ex)
+        {
+            MundaExtractionError = $"Error extracting gang data: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 }
