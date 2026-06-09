@@ -160,8 +160,20 @@ public class GangImportService
             // Log in if credentials provided
             if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
             {
-                _logger.LogInformation("Logging into Munda Manager...");
-                await LoginToMundaManagerAsync(page, username, password);
+                _logger.LogInformation("Logging into Munda Manager with credentials...");
+                try
+                {
+                    await LoginToMundaManagerAsync(page, username, password);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("Login failed: {Error}", ex.Message);
+                    throw;
+                }
+            }
+            else
+            {
+                _logger.LogWarning("No credentials provided for Munda Manager authentication");
             }
 
             _logger.LogInformation("Navigating to Munda Manager gang page: {Uri}", uri);
