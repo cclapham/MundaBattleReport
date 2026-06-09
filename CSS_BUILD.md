@@ -44,10 +44,22 @@ If you don't have Node.js installed yet:
 ```
 wwwroot/
 ├── scss/
-│   └── index.scss          (Source SASS file)
+│   └── index.scss          ← ⭐ SOURCE: Edit this file!
 └── css/
-    └── index.css           (Compiled CSS - auto-generated)
+    └── index.css           ← ⚠️  AUTO-GENERATED: Never edit directly!
 ```
+
+## IMPORTANT: CSS is Auto-Generated
+
+**⚠️ WARNING:** `wwwroot/css/index.css` is a compiled file that should **NEVER** be edited directly.
+
+All changes must be made to `wwwroot/scss/index.scss` and then compiled.
+
+### Why?
+- Minified CSS is impossible to maintain manually
+- Changes to SCSS will be overwritten if you edit CSS
+- The SCSS source is the single source of truth
+- Compilation ensures consistency and optimization
 
 ## File Organization
 
@@ -59,9 +71,11 @@ The SCSS file (`wwwroot/scss/index.scss`) includes:
 
 ## Modifying Styles
 
+**Always edit `wwwroot/scss/index.scss`, never the CSS file!**
+
 1. Edit `wwwroot/scss/index.scss`
-2. Run `npm run sass:watch` or save (if using Web Compiler)
-3. The CSS will automatically compile
+2. Run `npm run sass:watch` or `npm run sass:build`
+3. The minified CSS will automatically regenerate
 4. Refresh your browser to see changes
 
 ## CI/CD Integration

@@ -107,3 +107,8 @@ node_modules/
 package-lock.json
 npm-debug.log
 npm-error.log
+
+# Generated CSS (from SCSS source)
+# WARNING: Do not edit wwwroot/css/index.css directly!
+# This file is auto-generated from wwwroot/scss/index.scss
+# Edit the SCSS source file instead and recompile with: npm run sass:build
