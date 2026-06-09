@@ -364,3 +364,83 @@ $success-light: #81c784;
 .card-title-spacing {
   margin-bottom: 1rem;
 }
+
+// Gang Collection Styles
+.gang-collection {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.gang-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, $secondary-dark 0%, $tertiary-dark 100%);
+  border: 1px solid $accent-gold;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+  position: relative;
+}
+
+.gang-card__number {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: $accent-gold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  min-width: 70px;
+}
+
+.gang-card__info {
+  flex: 1;
+}
+
+.gang-card__name {
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+  color: $accent-gold;
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.gang-card__details {
+  font-size: 0.8rem;
+  color: $text-muted;
+}
+
+.gang-card__remove {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #999;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #ff6b6b;
+    border-color: #ff6b6b;
+    box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
+  }
+}
+
+// Proceed Section (Footer)
+.proceed-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid $border-dark;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.gang-count-hint {
+  font-size: 0.85rem;
+  color: $text-muted;
+  letter-spacing: 0.5px;
+  text-align: center;
+}

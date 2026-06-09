@@ -1,0 +1,76 @@
+@page "/battle-setup"
+@using MundaBattleReport.Services
+@inject BattleSessionService BattleSession
+@inject NavigationManager NavigationManager
+
+<PageTitle>Battle Setup — Munda Battle Report Generator</PageTitle>
+
+<link rel="stylesheet" href="css/index.css">
+
+<div class="hive-container">
+    <div class="hive-content">
+        <div class="hive-header">
+            <div class="hive-title">⬤ BATTLE SETUP ⬄</div>
+            <div class="hive-subtitle">Configuring battle parameters</div>
+        </div>
+
+        @if (!BattleSession.CanProceed)
+        {
+            <div class="import-card">
+                <div class="card-title">No Battle in Progress</div>
+                <div class="info-note">
+                    You need to import at least 2 gangs before proceeding to battle setup.
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <button class="action-button action-button-primary mud-button-root"
+                        @onclick="BackToGangImport">
+                        ← Back to Gang Import
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="import-card">
+                <div class="card-title">Battle Configuration</div>
+                <div class="info-note">
+                    Gangs loaded: <strong class="text-gold">@BattleSession.Gangs.Count</strong>
+                </div>
+
+                <div class="section-divider">
+                    <div style="margin-bottom: 1.5rem;">
+                        <h3 style="color: #ffd700; font-family: 'Courier New', monospace; margin-bottom: 1rem;">Battle Gangs</h3>
+                        @foreach (var (gang, index) in BattleSession.Gangs.Select((g, i) => (g, i)))
+                        {
+                            <div style="margin-bottom: 1rem; padding: 0.75rem; border: 1px solid #444; background: #0a0e27; border-radius: 4px;">
+                                <div style="color: #ffd700;">Gang @(index + 1): @gang.Name</div>
+                                <div style="color: #999; font-size: 0.85rem;">@gang.House — @gang.Fighters.Count fighters</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div style="color: #999; font-size: 0.85rem; margin-bottom: 1.5rem; text-align: center;">
+                    ⚙️ Battle setup page coming in Phase 2
+                </div>
+
+                <div class="button-group">
+                    <button class="action-button action-button-secondary mud-button-root"
+                        @onclick="BackToGangImport">
+                        ← Back to Gang Import
+                    </button>
+                    <button class="action-button action-button-primary mud-button-root" disabled>
+                        ▶ Proceed to Battle Logging
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private void BackToGangImport()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}

@@ -1,8 +1,10 @@
-﻿@page "/"
+@page "/"
 @using MundaBattleReport.Models
 @using MundaBattleReport.Services
 @inject GangImportService GangImportService
+@inject BattleSessionService BattleSession
 @inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
 
 <PageTitle>Munda Battle Report Generator</PageTitle>
 
@@ -11,25 +13,52 @@
 <div class="hive-container">
     <div class="hive-content">
         <div class="hive-header">
-            <div class="hive-title">⬤ NECROMUNDA ⬤</div>
+            <div class="hive-title">⬤ NECROMUNDA ⬄</div>
             <div class="hive-title subtitle">BATTLE REPORT GENERATOR</div>
             <div class="hive-subtitle">Gang Import Protocol v1.0</div>
         </div>
 
-        @if (ImportedGang == null)
+        <!-- Step indicator: 3 steps -->
+        <div class="step-indicator">
+            <div class="step-marker active">
+                <span>1</span>
+            </div>
+            <div class="step-line active"></div>
+            <div class="step-marker">
+                <span>2</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-marker">
+                <span>3</span>
+            </div>
+        </div>
+
+        <!-- Gang Collection (shown when gangs imported) -->
+        @if (BattleSession.Gangs.Count > 0)
         {
-            <div class="step-indicator">
-                <div class="step-marker active">
-                    <span>1</span>
-                </div>
-                <div class="step-line"></div>
-                <div class="step-marker">
-                    <span>2</span>
+            <div class="import-card">
+                <div class="card-title">Battle Roster</div>
+                <div class="gang-collection">
+                    @foreach (var (gang, index) in BattleSession.Gangs.Select((g, i) => (g, i)))
+                    {
+                        <div class="gang-card">
+                            <div class="gang-card__number">GANG @(index + 1)</div>
+                            <div class="gang-card__info">
+                                <div class="gang-card__name">@gang.Name</div>
+                                <div class="gang-card__details">@gang.House — @gang.Fighters.Count fighters</div>
+                            </div>
+                            <button class="gang-card__remove" @onclick="() => RemoveGang(gang.Id)" title="Remove this gang">✕</button>
+                        </div>
+                    }
                 </div>
             </div>
+        }
 
+        @if (PendingGang == null)
+        {
+            <!-- Step 1: Import screen -->
             <div class="import-card">
-                <div class="card-title">Import Gang Data</div>
+                <div class="card-title">@(BattleSession.Gangs.Count > 0 ? "Import Another Gang" : "Import Gang Data")</div>
 
                 <div class="input-section">
                     <label class="input-label">Gang Information (JSON Format)</label>
@@ -65,26 +94,17 @@
         }
         else
         {
-            <div class="step-indicator">
-                <div class="step-marker active">
-                    <span>1</span>
-                </div>
-                <div class="step-line active"></div>
-                <div class="step-marker active">
-                    <span>2</span>
-                </div>
-            </div>
-
+            <!-- Step 2: Verify screen -->
             <div class="import-card">
                 <div class="card-title">Verify Gang Records</div>
 
                 <div class="success-banner">
-                    <strong>✓ SCAN COMPLETE</strong> — Gang loaded: <span class="text-gold">@ImportedGang.Name</span> <span class="text-subtle">(@ImportedGang.House)</span>
+                    <strong>✓ SCAN COMPLETE</strong> — Gang loaded: <span class="text-gold">@PendingGang.Name</span> <span class="text-subtle">(@PendingGang.House)</span>
                 </div>
 
                 <div class="section-divider">
                     <div class="card-title card-title-spacing">Fighter Roster</div>
-                    <MudTable Items="ImportedGang.Fighters" Hover="true" Dense="true" Class="fighter-table">
+                    <MudTable Items="PendingGang.Fighters" Hover="true" Dense="true" Class="fighter-table">
                         <HeaderContent>
                             <MudTh>Fighter</MudTh>
                             <MudTh>Type</MudTh>
@@ -118,11 +138,11 @@
                     <div class="config-grid">
                         <div class="form-field">
                             <label class="form-label">Gang Name</label>
-                            <input type="text" @bind="ImportedGang.Name" class="form-input mud-input-root mud-input-root-outlined" />
+                            <input type="text" @bind="PendingGang.Name" class="form-input mud-input-root mud-input-root-outlined" />
                         </div>
                         <div class="form-field">
                             <label class="form-label">House</label>
-                            <input type="text" @bind="ImportedGang.House" class="form-input mud-input-root mud-input-root-outlined" />
+                            <input type="text" @bind="PendingGang.House" class="form-input mud-input-root mud-input-root-outlined" />
                         </div>
                     </div>
                 </div>
@@ -137,10 +157,28 @@
                         ⬄ Import New Gang
                     </button>
                     <button class="action-button action-button-primary mud-button-root"
-                        @onclick="ProceedToNextStep">
-                        ► Proceed to Battle
+                        @onclick="AddToBattle">
+                        ⬥ Add to Battle
                     </button>
                 </div>
+            </div>
+        }
+
+        <!-- Proceed section (footer) -->
+        @if (BattleSession.Gangs.Count > 0)
+        {
+            <div class="proceed-section">
+                @if (!BattleSession.CanProceed)
+                {
+                    <div class="gang-count-hint">
+                        ⟳ Import at least @(2 - BattleSession.Gangs.Count) more gang(s) to proceed
+                    </div>
+                }
+                <button class="action-button action-button-primary mud-button-root"
+                    @onclick="ProceedToNextStep"
+                    disabled="@(!BattleSession.CanProceed)">
+                    ▶ Proceed to Battle Setup
+                </button>
             </div>
         }
     </div>
@@ -148,7 +186,7 @@
 
 @code {
     private string GangInput = "";
-    private Gang? ImportedGang = null;
+    private Gang? PendingGang = null;
     private bool IsLoading = false;
 
     private async Task ImportGang()
@@ -163,7 +201,7 @@
 
             if (success && gang != null)
             {
-                ImportedGang = gang;
+                PendingGang = gang;
                 Snackbar.Add("Gang imported successfully!", Severity.Success);
             }
             else
@@ -177,18 +215,34 @@
         }
     }
 
+    private void AddToBattle()
+    {
+        if (PendingGang != null)
+        {
+            BattleSession.AddGang(PendingGang);
+            Snackbar.Add($"Gang added to battle: {PendingGang.Name}", Severity.Success);
+            PendingGang = null;
+            GangInput = "";
+        }
+    }
+
+    private void RemoveGang(Guid id)
+    {
+        BattleSession.RemoveGang(id);
+        Snackbar.Add("Gang removed from battle", Severity.Info);
+    }
+
     private void ResetImport()
     {
-        ImportedGang = null;
+        PendingGang = null;
         GangInput = "";
     }
 
     private void ProceedToNextStep()
     {
-        if (ImportedGang != null)
+        if (BattleSession.CanProceed)
         {
-            // TODO: Store gang in session state and navigate to BattleSetup.razor
-            Snackbar.Add("Feature coming soon: Battle setup", Severity.Info);
+            NavigationManager.NavigateTo("/battle-setup");
         }
     }
 
@@ -197,7 +251,7 @@
         var (success, gang, errorMessage) = GangImportService.GenerateSampleGang();
         if (success && gang != null)
         {
-            ImportedGang = gang;
+            PendingGang = gang;
             Snackbar.Add("Sample gang loaded for testing", Severity.Success);
         }
         else

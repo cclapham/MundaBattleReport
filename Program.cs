@@ -18,6 +18,7 @@ builder.Services.AddMudServices(config =>
 });
 
 builder.Services.AddHttpClient<GangImportService>();
+builder.Services.AddScoped<BattleSessionService>();
 
 var app = builder.Build();
 
