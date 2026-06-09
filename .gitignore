@@ -61,11 +61,15 @@ project.fragment.lock.json
 artifacts/
 
 # Local environment/secrets
+# IMPORTANT: Never commit actual credentials to development files
+# Use these files to store personal/local overrides instead:
 .env
 .env.local
 local.settings.json
 appsettings.Local.json
 appsettings.local.json
+appsettings.Development.Local.json
+appsettings.development.local.json
 
 # Puppeteer Chrome downloads
 bin/Debug/net10.0/Chrome/
