@@ -12,7 +12,7 @@
     <div class="hive-content">
         <div class="hive-header">
             <div class="hive-title">⬤ NECROMUNDA ⬤</div>
-            <div class="hive-title" style="font-size: 1.5rem; margin-bottom: 1rem;">BATTLE REPORT GENERATOR</div>
+            <div class="hive-title subtitle">BATTLE REPORT GENERATOR</div>
             <div class="hive-subtitle">Gang Import Protocol v1.0</div>
         </div>
 
@@ -28,7 +28,7 @@
                 </div>
             </div>
 
-            <div class="import-card" style="padding: 2rem;">
+            <div class="import-card">
                 <div class="card-title">Import Gang Data</div>
 
                 <div class="input-section">
@@ -36,19 +36,17 @@
                     <textarea
                         @bind="GangInput"
                         class="gang-input mud-input-root mud-input-root-outlined"
-                        style="width: 100%; min-height: 150px; padding: 1rem; border-radius: 4px; resize: vertical;"
                         placeholder="Paste JSON gang data here..."></textarea>
                 </div>
 
-                <div style="margin-bottom: 1.5rem; color: #999; font-size: 0.85rem; line-height: 1.5;">
-                    <strong style="color: #bbb;">Note:</strong> Paste valid JSON gang data. Example format includes fighter names, stats, weapons, and equipment.
+                <div class="info-note">
+                    <strong>Note:</strong> Paste valid JSON gang data. Example format includes fighter names, stats, weapons, and equipment.
                 </div>
 
                 <div class="button-group">
                     <button class="action-button action-button-primary mud-button-root"
                         @onclick="ImportGang"
-                        disabled="@(IsLoading || string.IsNullOrWhiteSpace(GangInput))"
-                        style="cursor: @(IsLoading || string.IsNullOrWhiteSpace(GangInput) ? "not-allowed" : "pointer"); opacity: @(IsLoading || string.IsNullOrWhiteSpace(GangInput) ? 0.5 : 1);">
+                        disabled="@(IsLoading || string.IsNullOrWhiteSpace(GangInput))">
                         @if (IsLoading)
                         {
                             <span class="loading-text">⟳ Importing...</span>
@@ -77,15 +75,15 @@
                 </div>
             </div>
 
-            <div class="import-card" style="padding: 2rem;">
+            <div class="import-card">
                 <div class="card-title">Verify Gang Records</div>
 
-                <div class="success-banner" style="padding: 1rem; margin-bottom: 1.5rem; border-radius: 4px;">
-                    <strong>✓ SCAN COMPLETE</strong> — Gang loaded: <span style="color: #ffed4e;">@ImportedGang.Name</span> <span style="color: #aaa;">(@ImportedGang.House)</span>
+                <div class="success-banner">
+                    <strong>✓ SCAN COMPLETE</strong> — Gang loaded: <span class="text-gold">@ImportedGang.Name</span> <span class="text-subtle">(@ImportedGang.House)</span>
                 </div>
 
-                <div style="margin-bottom: 1.5rem;">
-                    <div class="card-title" style="margin-bottom: 1rem;">Fighter Roster</div>
+                <div class="section-divider">
+                    <div class="card-title card-title-spacing">Fighter Roster</div>
                     <MudTable Items="ImportedGang.Fighters" Hover="true" Dense="true" Class="fighter-table">
                         <HeaderContent>
                             <MudTh>Fighter</MudTh>
@@ -95,11 +93,11 @@
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd DataLabel="Fighter">
-                                <span style="color: #ffed4e;">@context.FighterName</span>
+                                <span class="text-gold">@context.FighterName</span>
                             </MudTd>
                             <MudTd DataLabel="Type">@context.FighterType</MudTd>
                             <MudTd DataLabel="Stats">
-                                <span style="color: #81c784;">@context.WeaponSkill</span>/<span style="color: #81c784;">@context.BallisticSkill</span>
+                                <span class="text-stat">@context.WeaponSkill</span>/<span class="text-stat">@context.BallisticSkill</span>
                             </MudTd>
                             <MudTd DataLabel="Equipment">
                                 @if (context.Weapons.Any())
@@ -108,28 +106,28 @@
                                 }
                                 else
                                 {
-                                    <em style="color: #666;">—</em>
+                                    <em class="text-muted-dim">—</em>
                                 }
                             </MudTd>
                         </RowTemplate>
                     </MudTable>
                 </div>
 
-                <div style="margin-bottom: 1.5rem;">
-                    <div class="card-title" style="margin-bottom: 1rem;">Gang Configuration</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="section-divider">
+                    <div class="card-title card-title-spacing">Gang Configuration</div>
+                    <div class="config-grid">
                         <div class="form-field">
                             <label class="form-label">Gang Name</label>
-                            <input type="text" @bind="ImportedGang.Name" class="form-input mud-input-root mud-input-root-outlined" style="width: 100%; padding: 0.75rem; border-radius: 4px;" />
+                            <input type="text" @bind="ImportedGang.Name" class="form-input mud-input-root mud-input-root-outlined" />
                         </div>
                         <div class="form-field">
                             <label class="form-label">House</label>
-                            <input type="text" @bind="ImportedGang.House" class="form-input mud-input-root mud-input-root-outlined" style="width: 100%; padding: 0.75rem; border-radius: 4px;" />
+                            <input type="text" @bind="ImportedGang.House" class="form-input mud-input-root mud-input-root-outlined" />
                         </div>
                     </div>
                 </div>
 
-                <div style="color: #999; font-size: 0.85rem; margin-bottom: 1.5rem; text-align: center;">
+                <div class="info-note text-center">
                     Data verified and ready for battle documentation.
                 </div>
 

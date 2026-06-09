@@ -73,7 +73,7 @@ $success-light: #81c784;
   margin-bottom: 0.5rem;
   text-transform: uppercase;
 
-  &[style*="font-size: 1.5rem"] {
+  &.subtitle {
     font-size: 1.5rem;
     margin-bottom: 1rem;
   }
@@ -135,6 +135,7 @@ $success-light: #81c784;
   margin-bottom: 2rem;
   position: relative;
   z-index: 2;
+  padding: 2rem;
 
   &::before {
     content: '';
@@ -185,11 +186,45 @@ $success-light: #81c784;
   color: $text-light !important;
   font-family: 'Courier New', monospace;
   font-size: 0.9rem;
+  width: 100% !important;
+  min-height: 150px;
+  padding: 1rem;
+  border-radius: 4px;
+  resize: vertical;
 
   &:focus {
     border-color: $accent-gold !important;
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.2) !important;
   }
+}
+
+// Info/Note sections
+.info-note {
+  margin-bottom: 1.5rem;
+  color: $text-muted;
+  font-size: 0.85rem;
+  line-height: 1.5;
+
+  strong {
+    color: #bbb;
+  }
+}
+
+// Section dividers
+.section-divider {
+  margin-bottom: 1.5rem;
+}
+
+// Centered text
+.text-center {
+  text-align: center;
+}
+
+// Configuration grid
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
 // Buttons
@@ -209,6 +244,11 @@ $success-light: #81c784;
   font-size: 0.9rem;
   border: 1px solid $accent-gold !important;
   transition: all 0.3s ease;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 }
 
 .action-button-primary {
@@ -266,6 +306,9 @@ $success-light: #81c784;
   background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.05)) !important;
   border: 1px solid $success-green !important;
   color: $success-light !important;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 4px;
 }
 
 // Form Fields
@@ -281,10 +324,14 @@ $success-light: #81c784;
   margin-bottom: 0.5rem;
 }
 
+// Form Input Styling
 .form-input {
   background: $primary-dark !important;
   border: 1px solid $border-dark !important;
   color: $text-light !important;
+  width: 100% !important;
+  padding: 0.75rem;
+  border-radius: 4px;
 
   &:focus {
     border-color: $accent-gold !important;
@@ -295,4 +342,25 @@ $success-light: #81c784;
 // Loading State
 .loading-text {
   animation: blink 1s infinite;
+}
+
+// Color Utilities
+.text-gold {
+  color: $accent-gold;
+}
+
+.text-stat {
+  color: $success-light;
+}
+
+.text-subtle {
+  color: #aaa;
+}
+
+.text-muted-dim {
+  color: #666;
+}
+
+.card-title-spacing {
+  margin-bottom: 1rem;
 }

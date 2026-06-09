@@ -1,27 +1,22 @@
 /* Necromunda Battle Report - Gang Import Page Styles */
 /* Grimdark hive-city archive aesthetic */
 @@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
+
 @@keyframes blink {
-  0%, 50%, 100% {
-    opacity: 1;
-  }
-  25%, 75% {
-    opacity: 0.7;
-  }
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0.7; }
 }
+
 .hive-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0a0e27 100%);
   position: relative;
   padding: 2rem;
 }
+
 .hive-container::before {
   content: '';
   position: fixed;
@@ -59,6 +54,11 @@
   text-transform: uppercase;
 }
 
+.hive-title.subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
 .hive-subtitle {
   font-size: 0.95rem;
   color: #999;
@@ -87,6 +87,7 @@
   color: #999;
   position: relative;
 }
+
 .step-marker.active {
   border-color: #ffd700;
   color: #ffd700;
@@ -99,6 +100,7 @@
   background: #444;
   margin-top: 24px;
 }
+
 .step-line.active {
   background: #ffd700;
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
@@ -111,7 +113,9 @@
   margin-bottom: 2rem;
   position: relative;
   z-index: 2;
+  padding: 2rem;
 }
+
 .import-card::before {
   content: '';
   position: absolute;
@@ -133,6 +137,7 @@
   align-items: center;
   gap: 0.5rem;
 }
+
 .card-title::before {
   content: '►';
   font-size: 0.8rem;
@@ -158,10 +163,41 @@
   color: #eee !important;
   font-family: 'Courier New', monospace;
   font-size: 0.9rem;
+  width: 100% !important;
+  min-height: 150px;
+  padding: 1rem;
+  border-radius: 4px;
+  resize: vertical;
 }
+
 .gang-input:focus {
   border-color: #ffd700 !important;
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.2) !important;
+}
+
+.info-note {
+  margin-bottom: 1.5rem;
+  color: #999;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.info-note strong {
+  color: #bbb;
+}
+
+.section-divider {
+  margin-bottom: 1.5rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
 .button-group {
@@ -182,10 +218,16 @@
   transition: all 0.3s ease;
 }
 
+.action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .action-button-primary {
   background: #ffd700 !important;
   color: #000 !important;
 }
+
 .action-button-primary:hover {
   background: #ffed4e !important;
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.6) !important;
@@ -195,6 +237,7 @@
   background: transparent !important;
   color: #ffd700 !important;
 }
+
 .action-button-secondary:hover {
   background: rgba(255, 215, 0, 0.1) !important;
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.3) !important;
@@ -205,10 +248,12 @@
   border: 1px solid #444 !important;
   margin-top: 1.5rem;
 }
+
 .fighter-table thead {
   background: linear-gradient(90deg, #1a1f3a, #151a32);
   border-bottom: 1px solid #ffd700 !important;
 }
+
 .fighter-table th {
   color: #ffd700 !important;
   font-family: 'Courier New', monospace;
@@ -217,10 +262,12 @@
   text-transform: uppercase;
   font-size: 0.85rem;
 }
+
 .fighter-table td {
   color: #ddd;
   border-bottom: 1px solid #333 !important;
 }
+
 .fighter-table tr:hover {
   background: rgba(255, 215, 0, 0.05) !important;
 }
@@ -229,6 +276,9 @@
   background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.05)) !important;
   border: 1px solid #4caf50 !important;
   color: #81c784 !important;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 4px;
 }
 
 .form-field {
@@ -247,7 +297,11 @@
   background: #0a0e27 !important;
   border: 1px solid #444 !important;
   color: #eee !important;
+  width: 100% !important;
+  padding: 0.75rem;
+  border-radius: 4px;
 }
+
 .form-input:focus {
   border-color: #ffd700 !important;
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.2) !important;
@@ -255,4 +309,24 @@
 
 .loading-text {
   animation: blink 1s infinite;
+}
+
+.text-gold {
+  color: #ffd700;
+}
+
+.text-stat {
+  color: #81c784;
+}
+
+.text-subtle {
+  color: #aaa;
+}
+
+.text-muted-dim {
+  color: #666;
+}
+
+.card-title-spacing {
+  margin-bottom: 1rem;
 }
