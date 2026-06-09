@@ -101,3 +101,9 @@ ehthumbs.db
 bin/
 obj/
 publish/
+
+# Node.js / npm
+node_modules/
+package-lock.json
+npm-debug.log
+npm-error.log

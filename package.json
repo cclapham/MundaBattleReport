@@ -1,0 +1,13 @@
+{
+  "name": "munda-battle-report",
+  "version": "1.0.0",
+  "description": "Necromunda Battle Report Generator",
+  "scripts": {
+    "sass:watch": "sass --watch wwwroot/scss:wwwroot/css",
+    "sass:build": "sass wwwroot/scss:wwwroot/css --style=compressed",
+    "build": "npm run sass:build"
+  },
+  "devDependencies": {
+    "sass": "^1.77.0"
+  }
+}

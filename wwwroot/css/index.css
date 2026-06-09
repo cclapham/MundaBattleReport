@@ -1,0 +1,258 @@
+/* Necromunda Battle Report - Gang Import Page Styles */
+/* Grimdark hive-city archive aesthetic */
+@@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+@@keyframes blink {
+  0%, 50%, 100% {
+    opacity: 1;
+  }
+  25%, 75% {
+    opacity: 0.7;
+  }
+}
+.hive-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0a0e27 100%);
+  position: relative;
+  padding: 2rem;
+}
+.hive-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 215, 0, 0.02) 2px, rgba(255, 215, 0, 0.02) 4px), repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 215, 0, 0.02) 2px, rgba(255, 215, 0, 0.02) 4px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hive-content {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.hive-header {
+  margin-bottom: 4rem;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.hive-title {
+  font-family: 'Courier New', monospace;
+  font-size: 2.5rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.2);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.hive-subtitle {
+  font-size: 0.95rem;
+  color: #999;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  position: relative;
+  z-index: 2;
+}
+
+.step-marker {
+  width: 50px;
+  height: 50px;
+  border: 2px solid #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #999;
+  position: relative;
+}
+.step-marker.active {
+  border-color: #ffd700;
+  color: #ffd700;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+
+.step-line {
+  width: 40px;
+  height: 2px;
+  background: #444;
+  margin-top: 24px;
+}
+.step-line.active {
+  background: #ffd700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.import-card {
+  background: linear-gradient(135deg, #1a1f3a 0%, #151a32 100%);
+  border: 1px solid #ffd700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.15), inset 0 0 10px rgba(255, 215, 0, 0.05);
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 2;
+}
+.import-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+}
+
+.card-title {
+  font-family: 'Courier New', monospace;
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+  color: #ffd700;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.card-title::before {
+  content: '►';
+  font-size: 0.8rem;
+  animation: pulse 2s infinite;
+}
+
+.input-section {
+  margin-bottom: 1.5rem;
+}
+
+.input-label {
+  font-size: 0.85rem;
+  color: #bbb;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  display: block;
+  text-transform: uppercase;
+}
+
+.gang-input {
+  background: #0a0e27 !important;
+  border: 1px solid #444 !important;
+  color: #eee !important;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+.gang-input:focus {
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.2) !important;
+}
+
+.button-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.action-button {
+  padding: 0.9rem 1.5rem !important;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  border: 1px solid #ffd700 !important;
+  transition: all 0.3s ease;
+}
+
+.action-button-primary {
+  background: #ffd700 !important;
+  color: #000 !important;
+}
+.action-button-primary:hover {
+  background: #ffed4e !important;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6) !important;
+}
+
+.action-button-secondary {
+  background: transparent !important;
+  color: #ffd700 !important;
+}
+.action-button-secondary:hover {
+  background: rgba(255, 215, 0, 0.1) !important;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3) !important;
+}
+
+.fighter-table {
+  background: #0a0e27 !important;
+  border: 1px solid #444 !important;
+  margin-top: 1.5rem;
+}
+.fighter-table thead {
+  background: linear-gradient(90deg, #1a1f3a, #151a32);
+  border-bottom: 1px solid #ffd700 !important;
+}
+.fighter-table th {
+  color: #ffd700 !important;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+.fighter-table td {
+  color: #ddd;
+  border-bottom: 1px solid #333 !important;
+}
+.fighter-table tr:hover {
+  background: rgba(255, 215, 0, 0.05) !important;
+}
+
+.success-banner {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.05)) !important;
+  border: 1px solid #4caf50 !important;
+  color: #81c784 !important;
+}
+
+.form-field {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  color: #999;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  background: #0a0e27 !important;
+  border: 1px solid #444 !important;
+  color: #eee !important;
+}
+.form-input:focus {
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.2) !important;
+}
+
+.loading-text {
+  animation: blink 1s infinite;
+}
