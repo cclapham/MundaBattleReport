@@ -15,6 +15,10 @@ builder.Services.AddMudServices(config =>
     config.SnackbarConfiguration.HideTransitionDuration = 500;
     config.SnackbarConfiguration.ShowTransitionDuration = 500;
     config.SnackbarConfiguration.VisibleStateDuration = 5000;
+    config.SnackbarConfiguration.PreventDuplicates = true;
+    config.SnackbarConfiguration.MaxDisplayedSnackbars = 5;
+    config.SnackbarConfiguration.ShowCloseIcon = true;
+    config.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
 });
 
 builder.Services.AddHttpClient<GangImportService>();

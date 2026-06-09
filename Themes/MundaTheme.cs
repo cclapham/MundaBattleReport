@@ -18,10 +18,10 @@ public static class MundaThemeFactory
                 SecondaryContrastText = "#ffffff",
                 Tertiary = "#8b4545", // Deep red/purple
                 TertiaryContrastText = "#ffffff",
-                Info = "#0080ff",
-                Success = "#00aa44",
-                Warning = "#ff9500",
-                Error = "#ff3333",
+                Info = "#4da6ff", // Blue - matches secondary
+                Success = "#4caf50", // Bright green for success feedback
+                Warning = "#ffb74d", // Orange for caution
+                Error = "#ef5350", // Red for errors
                 Dark = "#1a1a1a",
                 TextPrimary = "#e8e8e8",
                 TextSecondary = "#b0b0b0",
