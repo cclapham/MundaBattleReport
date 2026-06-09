@@ -64,6 +64,8 @@ artifacts/
 .env
 .env.local
 local.settings.json
+appsettings.Local.json
+appsettings.local.json
 
 # Puppeteer Chrome downloads
 bin/Debug/net10.0/Chrome/

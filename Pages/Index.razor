@@ -16,19 +16,18 @@
             <MudCardContent>
                 <MudText Typo="Typo.h5" Class="mb-4">Step 1: Import Your Gang</MudText>
 
-                <MudAlert Severity="Severity.Info" Class="mb-4">
-                    <strong>Munda Manager Integration Coming:</strong> We're working with Munda Manager to integrate their API.
-                    For now, use JSON data or load sample data to test the functionality.
-                </MudAlert>
-
                 <MudTextField
                     @bind-Value="GangInput"
-                    Label="Gang Data (JSON)"
-                    Placeholder="Paste JSON gang data here"
+                    Label="Munda Manager Share Link or JSON"
+                    Placeholder="Paste a Munda Manager share link (e.g., https://www.mundamanager.com/share/...) or JSON data"
                     Variant="Variant.Outlined"
                     FullWidth="true"
-                    Lines="4"
+                    Lines="3"
                     Class="mb-4" />
+
+                <MudText Typo="Typo.caption" Class="mb-4">
+                    Enter either a Munda Manager share link or JSON gang data. Share links will be fetched and scraped automatically.
+                </MudText>
 
                 <MudStack Row="true" Spacing="2" Class="mb-4">
                     <MudButton

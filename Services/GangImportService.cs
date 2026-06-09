@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MundaBattleReport.Models;
 using PuppeteerSharp;
+using Microsoft.Extensions.Configuration;
 
 namespace MundaBattleReport.Services;
 
@@ -8,11 +9,13 @@ public class GangImportService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<GangImportService> _logger;
+    private readonly IConfiguration _config;
 
-    public GangImportService(HttpClient httpClient, ILogger<GangImportService> logger)
+    public GangImportService(HttpClient httpClient, ILogger<GangImportService> logger, IConfiguration config)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _config = config;
     }
 
     /// <summary>
@@ -74,12 +77,15 @@ public class GangImportService
         {
             // Use Puppeteer to render the page and extract data
             _logger.LogInformation("Fetching Munda Manager gang page using Puppeteer: {Uri}", uri);
-            var fighters = await FetchGangDataWithPuppeteerAsync(uri);
+            var mundaUsername = _config["MundaManager:Username"];
+            var mundaPassword = _config["MundaManager:Password"];
+
+            var fighters = await FetchGangDataWithPuppeteerAsync(uri, mundaUsername, mundaPassword);
 
             if (fighters == null || fighters.Count == 0)
             {
                 _logger.LogWarning("No fighter data extracted from Munda Manager page");
-                return (false, null, "Could not read gang data from the Munda Manager link. Please verify the link is correct and publicly shared.");
+                return (false, null, "Could not read gang data from the Munda Manager link. Please verify the link is correct.");
             }
 
             var house = ExtractHouseFromFighters(fighters);
@@ -116,7 +122,7 @@ public class GangImportService
     private static IBrowser? _browser;
     private static readonly SemaphoreSlim _browserLock = new SemaphoreSlim(1, 1);
 
-    private async Task<List<MundaFighter>?> FetchGangDataWithPuppeteerAsync(Uri uri)
+    private async Task<List<MundaFighter>?> FetchGangDataWithPuppeteerAsync(Uri uri, string? username = null, string? password = null)
     {
         try
         {
@@ -150,6 +156,13 @@ public class GangImportService
             await using var page = await _browser.NewPageAsync();
             page.DefaultTimeout = 10000;
             page.DefaultNavigationTimeout = 10000;
+
+            // Log in if credentials provided
+            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+            {
+                _logger.LogInformation("Logging into Munda Manager...");
+                await LoginToMundaManagerAsync(page, username, password);
+            }
 
             _logger.LogInformation("Navigating to Munda Manager gang page: {Uri}", uri);
 
@@ -463,6 +476,47 @@ public class GangImportService
             return $"{leader.FighterName}'s Gang";
 
         return "Imported Gang";
+    }
+
+    private async Task LoginToMundaManagerAsync(IPage page, string username, string password)
+    {
+        try
+        {
+            // Navigate to login page
+            await page.GoToAsync("https://www.mundamanager.com/login", WaitUntilNavigation.Networkidle2);
+
+            // Wait for login form to appear
+            await page.WaitForSelectorAsync("input[type='email'], input[name='email'], input[placeholder*='email' i]", new WaitForSelectorOptions { Timeout = 5000 });
+
+            // Fill in email/username
+            var emailInput = await page.QuerySelectorAsync("input[type='email'], input[name='email'], input[placeholder*='email' i]");
+            if (emailInput != null)
+            {
+                await emailInput.TypeAsync(username);
+            }
+
+            // Fill in password
+            var passwordInput = await page.QuerySelectorAsync("input[type='password'], input[name='password']");
+            if (passwordInput != null)
+            {
+                await passwordInput.TypeAsync(password);
+            }
+
+            // Click login button
+            var loginButton = await page.QuerySelectorAsync("button[type='submit'], button:has-text('Login'), button:has-text('Sign In')");
+            if (loginButton != null)
+            {
+                await loginButton.ClickAsync();
+                await page.WaitForNavigationAsync(new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } });
+            }
+
+            _logger.LogInformation("Successfully logged into Munda Manager");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Error logging into Munda Manager: {Error}", ex.Message);
+            throw new InvalidOperationException("Failed to log into Munda Manager. Check credentials.", ex);
+        }
     }
 
     /// <summary>
