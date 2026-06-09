@@ -6,134 +6,413 @@
 
 <PageTitle>Munda Battle Report Generator</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
-    <MudText Typo="Typo.h3" Class="mb-4">Necromunda Battle Report Generator</MudText>
-    <MudText Typo="Typo.body1" Class="mb-6">Import your gang from Munda Manager and generate cinematic battle narratives.</MudText>
+<style>
+    .hive-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0a0e27 100%);
+        position: relative;
+        padding: 2rem;
+    }
 
-    @if (ImportedGang == null)
-    {
-        <MudCard Class="mb-6">
-            <MudCardContent>
-                <MudText Typo="Typo.h5" Class="mb-4">Step 1: Import Your Gang</MudText>
+    .hive-container::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image:
+            repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 215, 0, 0.02) 2px, rgba(255, 215, 0, 0.02) 4px),
+            repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 215, 0, 0.02) 2px, rgba(255, 215, 0, 0.02) 4px);
+        pointer-events: none;
+        z-index: 0;
+    }
 
-                <MudTextField
-                    @bind-Value="GangInput"
-                    Label="Munda Manager Share Link or JSON"
-                    Placeholder="Paste a Munda Manager share link (e.g., https://www.mundamanager.com/share/...) or JSON data"
-                    Variant="Variant.Outlined"
-                    FullWidth="true"
-                    Lines="3"
-                    Class="mb-4" />
+    .hive-content {
+        position: relative;
+        z-index: 1;
+        max-width: 900px;
+        margin: 0 auto;
+    }
 
-                <MudText Typo="Typo.caption" Class="mb-4">
-                    Enter either a Munda Manager share link or JSON gang data. Share links will be fetched and scraped automatically.
-                </MudText>
+    .hive-header {
+        margin-bottom: 4rem;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
 
-                <MudStack Row="true" Spacing="2" Class="mb-4">
-                    <MudButton
-                        Variant="Variant.Filled"
-                        Color="Color.Primary"
-                        Size="Size.Large"
-                        FullWidth="true"
-                        OnClick="ImportGang"
-                        Disabled="IsLoading || string.IsNullOrWhiteSpace(GangInput)">
+    .hive-title {
+        font-family: 'Courier New', monospace;
+        font-size: 2.5rem;
+        font-weight: bold;
+        letter-spacing: 2px;
+        color: #ffd700;
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.2);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+    }
+
+    .hive-subtitle {
+        font-size: 0.95rem;
+        color: #999;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+    }
+
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 3rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .step-marker {
+        width: 50px;
+        height: 50px;
+        border: 2px solid #444;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #999;
+        position: relative;
+    }
+
+    .step-marker.active {
+        border-color: #ffd700;
+        color: #ffd700;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+    }
+
+    .step-line {
+        width: 40px;
+        height: 2px;
+        background: #444;
+        margin-top: 24px;
+    }
+
+    .step-line.active {
+        background: #ffd700;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+
+    .import-card {
+        background: linear-gradient(135deg, #1a1f3a 0%, #151a32 100%);
+        border: 1px solid #ffd700;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.15), inset 0 0 10px rgba(255, 215, 0, 0.05);
+        margin-bottom: 2rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .import-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #ffd700, transparent);
+    }
+
+    .card-title {
+        font-family: 'Courier New', monospace;
+        font-size: 1.3rem;
+        letter-spacing: 1px;
+        color: #ffd700;
+        text-transform: uppercase;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-title::before {
+        content: '►';
+        font-size: 0.8rem;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    .input-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .input-label {
+        font-size: 0.85rem;
+        color: #bbb;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+        display: block;
+        text-transform: uppercase;
+    }
+
+    .gang-input {
+        background: #0a0e27 !important;
+        border: 1px solid #444 !important;
+        color: #eee !important;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+    }
+
+    .gang-input:focus {
+        border-color: #ffd700 !important;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.2) !important;
+    }
+
+    .button-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .action-button {
+        padding: 0.9rem 1.5rem !important;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        border: 1px solid #ffd700 !important;
+        transition: all 0.3s ease;
+    }
+
+    .action-button-primary {
+        background: #ffd700 !important;
+        color: #000 !important;
+    }
+
+    .action-button-primary:hover {
+        background: #ffed4e !important;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6) !important;
+    }
+
+    .action-button-secondary {
+        background: transparent !important;
+        color: #ffd700 !important;
+    }
+
+    .action-button-secondary:hover {
+        background: rgba(255, 215, 0, 0.1) !important;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.3) !important;
+    }
+
+    .fighter-table {
+        background: #0a0e27 !important;
+        border: 1px solid #444 !important;
+        margin-top: 1.5rem;
+    }
+
+    .fighter-table thead {
+        background: linear-gradient(90deg, #1a1f3a, #151a32);
+        border-bottom: 1px solid #ffd700 !important;
+    }
+
+    .fighter-table th {
+        color: #ffd700 !important;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+
+    .fighter-table td {
+        color: #ddd;
+        border-bottom: 1px solid #333 !important;
+    }
+
+    .fighter-table tr:hover {
+        background: rgba(255, 215, 0, 0.05) !important;
+    }
+
+    .success-banner {
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.05)) !important;
+        border: 1px solid #4caf50 !important;
+        color: #81c784 !important;
+    }
+
+    .form-field {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-size: 0.85rem;
+        color: #999;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+        background: #0a0e27 !important;
+        border: 1px solid #444 !important;
+        color: #eee !important;
+    }
+
+    .form-input:focus {
+        border-color: #ffd700 !important;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.2) !important;
+    }
+
+    .loading-text {
+        animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+        0%, 50%, 100% { opacity: 1; }
+        25%, 75% { opacity: 0.7; }
+    }
+</style>
+
+<div class="hive-container">
+    <div class="hive-content">
+        <div class="hive-header">
+            <div class="hive-title">⬤ NECROMUNDA ⬤</div>
+            <div class="hive-title" style="font-size: 1.5rem; margin-bottom: 1rem;">BATTLE REPORT GENERATOR</div>
+            <div class="hive-subtitle">Gang Import Protocol v1.0</div>
+        </div>
+
+        @if (ImportedGang == null)
+        {
+            <div class="step-indicator">
+                <div class="step-marker active">
+                    <span>1</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step-marker">
+                    <span>2</span>
+                </div>
+            </div>
+
+            <div class="import-card" style="padding: 2rem;">
+                <div class="card-title">Import Gang Data</div>
+
+                <div class="input-section">
+                    <label class="input-label">Gang Information (JSON Format)</label>
+                    <textarea
+                        @bind="GangInput"
+                        class="gang-input mud-input-root mud-input-root-outlined"
+                        style="width: 100%; min-height: 150px; padding: 1rem; border-radius: 4px; resize: vertical;"
+                        placeholder="Paste JSON gang data here..."></textarea>
+                </div>
+
+                <div style="margin-bottom: 1.5rem; color: #999; font-size: 0.85rem; line-height: 1.5;">
+                    <strong style="color: #bbb;">Note:</strong> Paste valid JSON gang data. Example format includes fighter names, stats, weapons, and equipment.
+                </div>
+
+                <div class="button-group">
+                    <button class="action-button action-button-primary mud-button-root"
+                        @onclick="ImportGang"
+                        disabled="@(IsLoading || string.IsNullOrWhiteSpace(GangInput))"
+                        style="cursor: @(IsLoading || string.IsNullOrWhiteSpace(GangInput) ? "not-allowed" : "pointer"); opacity: @(IsLoading || string.IsNullOrWhiteSpace(GangInput) ? 0.5 : 1);">
                         @if (IsLoading)
                         {
-                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                            <MudText Class="ms-2">Importing...</MudText>
+                            <span class="loading-text">⟳ Importing...</span>
                         }
                         else
                         {
-                            <MudText>Import Gang</MudText>
+                            <span>⬥ Scan Data</span>
                         }
-                    </MudButton>
-                    <MudButton
-                        Variant="Variant.Outlined"
-                        Color="Color.Default"
-                        Size="Size.Large"
-                        OnClick="LoadSampleGang">
-                        Load Sample Data
-                    </MudButton>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
-    }
-    else
-    {
-        <MudCard>
-            <MudCardContent>
-                <MudText Typo="Typo.h5" Class="mb-4">Step 2: Verify Gang Data</MudText>
+                    </button>
+                    <button class="action-button action-button-secondary mud-button-root"
+                        @onclick="LoadSampleGang">
+                        ⬤ Load Sample
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="step-indicator">
+                <div class="step-marker active">
+                    <span>1</span>
+                </div>
+                <div class="step-line active"></div>
+                <div class="step-marker active">
+                    <span>2</span>
+                </div>
+            </div>
 
-                <MudAlert Severity="Severity.Success" Class="mb-4">
-                    Successfully imported <strong>@ImportedGang.Name</strong> (@ImportedGang.House)
-                </MudAlert>
+            <div class="import-card" style="padding: 2rem;">
+                <div class="card-title">Verify Gang Records</div>
 
-                <MudText Typo="Typo.subtitle2" Class="mb-3">Gang Roster</MudText>
+                <div class="success-banner" style="padding: 1rem; margin-bottom: 1.5rem; border-radius: 4px;">
+                    <strong>✓ SCAN COMPLETE</strong> — Gang loaded: <span style="color: #ffed4e;">@ImportedGang.Name</span> <span style="color: #aaa;">(@ImportedGang.House)</span>
+                </div>
 
-                <MudTable Items="ImportedGang.Fighters" Hover="true" Dense="true" Class="mb-4">
-                    <HeaderContent>
-                        <MudTh>Fighter Name</MudTh>
-                        <MudTh>Type</MudTh>
-                        <MudTh>WS/BS</MudTh>
-                        <MudTh>Equipment</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="Name">@context.FighterName</MudTd>
-                        <MudTd DataLabel="Type">@context.FighterType</MudTd>
-                        <MudTd DataLabel="WS/BS">@context.WeaponSkill/@context.BallisticSkill</MudTd>
-                        <MudTd DataLabel="Equipment">
-                            @if (context.Weapons.Any())
-                            {
-                                @string.Join(", ", context.Weapons.Select(w => w.Name))
-                            }
-                            else
-                            {
-                                <em>No weapons</em>
-                            }
-                        </MudTd>
-                    </RowTemplate>
-                </MudTable>
+                <div style="margin-bottom: 1.5rem;">
+                    <div class="card-title" style="margin-bottom: 1rem;">Fighter Roster</div>
+                    <MudTable Items="ImportedGang.Fighters" Hover="true" Dense="true" Class="fighter-table">
+                        <HeaderContent>
+                            <MudTh>Fighter</MudTh>
+                            <MudTh>Type</MudTh>
+                            <MudTh>Stats</MudTh>
+                            <MudTh>Equipment</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Fighter">
+                                <span style="color: #ffed4e;">@context.FighterName</span>
+                            </MudTd>
+                            <MudTd DataLabel="Type">@context.FighterType</MudTd>
+                            <MudTd DataLabel="Stats">
+                                <span style="color: #81c784;">@context.WeaponSkill</span>/<span style="color: #81c784;">@context.BallisticSkill</span>
+                            </MudTd>
+                            <MudTd DataLabel="Equipment">
+                                @if (context.Weapons.Any())
+                                {
+                                    @string.Join(", ", context.Weapons.Select(w => w.Name))
+                                }
+                                else
+                                {
+                                    <em style="color: #666;">—</em>
+                                }
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </div>
 
-                <MudText Typo="Typo.subtitle2" Class="mb-2">Gang Details</MudText>
-                <MudGrid Class="mb-4">
-                    <MudItem xs="6">
-                        <MudTextField
-                            @bind-Value="ImportedGang.Name"
-                            Label="Gang Name"
-                            Variant="Variant.Outlined"
-                            FullWidth="true" />
-                    </MudItem>
-                    <MudItem xs="6">
-                        <MudTextField
-                            @bind-Value="ImportedGang.House"
-                            Label="House"
-                            Variant="Variant.Outlined"
-                            FullWidth="true" />
-                    </MudItem>
-                </MudGrid>
+                <div style="margin-bottom: 1.5rem;">
+                    <div class="card-title" style="margin-bottom: 1rem;">Gang Configuration</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-field">
+                            <label class="form-label">Gang Name</label>
+                            <input type="text" @bind="ImportedGang.Name" class="form-input mud-input-root mud-input-root-outlined" style="width: 100%; padding: 0.75rem; border-radius: 4px;" />
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">House</label>
+                            <input type="text" @bind="ImportedGang.House" class="form-input mud-input-root mud-input-root-outlined" style="width: 100%; padding: 0.75rem; border-radius: 4px;" />
+                        </div>
+                    </div>
+                </div>
 
-                <MudText Typo="Typo.caption" Class="mb-4">
-                    ✓ Gang data is ready. Proceed to battle logging next.
-                </MudText>
+                <div style="color: #999; font-size: 0.85rem; margin-bottom: 1.5rem; text-align: center;">
+                    Data verified and ready for battle documentation.
+                </div>
 
-                <MudStack Row="true" Spacing="2">
-                    <MudButton
-                        Variant="Variant.Outlined"
-                        Color="Color.Default"
-                        OnClick="ResetImport">
-                        Import Different Gang
-                    </MudButton>
-                    <MudButton
-                        Variant="Variant.Filled"
-                        Color="Color.Primary"
-                        OnClick="ProceedToNextStep">
-                        Continue to Battle Setup
-                    </MudButton>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
-    }
-</MudContainer>
+                <div class="button-group">
+                    <button class="action-button action-button-secondary mud-button-root"
+                        @onclick="ResetImport">
+                        ⬄ Import New Gang
+                    </button>
+                    <button class="action-button action-button-primary mud-button-root"
+                        @onclick="ProceedToNextStep">
+                        ► Proceed to Battle
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
 
 @code {
     private string GangInput = "";
