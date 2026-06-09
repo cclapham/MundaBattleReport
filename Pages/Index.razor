@@ -155,11 +155,12 @@
     }
 </MudContainer>
 
-<MudDialog @bind-IsVisible="ShowMundaModal" MaxWidth="MaxWidth.Large" FullWidth="true">
-    <TitleContent>
-        <MudText Typo="Typo.h6">Login to Munda Manager & Extract Gang Data</MudText>
-    </TitleContent>
-    <DialogContent>
+@if (ShowMundaModal)
+{
+    <MudOverlay Visible="ShowMundaModal" OnClick="CloseMundaModal" DarkBackground="true" />
+    <MudPaper Class="pa-6" Style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; z-index: 1301;">
+        <MudText Typo="Typo.h6" Class="mb-4">Login to Munda Manager & Extract Gang Data</MudText>
+
         <MudAlert Severity="Severity.Info" Class="mb-4">
             <strong>Instructions:</strong>
             <ol>
@@ -183,14 +184,15 @@
                 @MundaExtractionError
             </MudAlert>
         }
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="CloseMundaModal">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ExtractGangFromMunda">
-            Extract Gang Data
-        </MudButton>
-    </DialogActions>
-</MudDialog>
+
+        <MudStack Row="true" Spacing="2" Class="mt-4">
+            <MudButton OnClick="CloseMundaModal">Cancel</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ExtractGangFromMunda">
+                Extract Gang Data
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+}
 
 @code {
     private string GangInput = "";
